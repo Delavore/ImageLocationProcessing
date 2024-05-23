@@ -74,7 +74,9 @@ def getPerson(myImg) -> list:
 
 def getAngle(playerCoord: list, playerVec: list, targetCoord: list) -> float:
     newVec = (targetCoord[0] - playerCoord[0], targetCoord[1] - playerCoord[1])
-    cosa = (playerVec[0] * newVec[0] + playerVec[1] * newVec[1]) / ((((newVec[0])**2 + (newVec[1])**2)**0.5) * (((playerVec[0])**2 + (playerVec[1])**2)**0.5))
+    cosa = ((playerVec[0] * newVec[0] + playerVec[1] * newVec[1]) / 
+    ((((newVec[0])**2 + (newVec[1])**2)**0.5) * (((playerVec[0])**2 + (playerVec[1])**2)**0.5)))
+    
     print("cosa", cosa)
     
     alpha = math.acos(cosa)
@@ -160,7 +162,8 @@ def aproxSex(road1: list, hSide: int):
 
         j = 0
         while j < len(road):
-            if upLeft[0] <= road[j][0] <= downRight[0] and upLeft[1] >= road[j][1] >= downRight[1]: 
+            if (upLeft[0] <= road[j][0] <= downRight[0] and 
+            upLeft[1] >= road[j][1] >= downRight[1]): 
                 tmp.append(road[j])
                 target = road[j]
                 road.pop(j)
