@@ -1,0 +1,5 @@
+mss
+keyboard
+mouse
+pyxel
+PyAutoIt
