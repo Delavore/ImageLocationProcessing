@@ -3,3 +3,4 @@ keyboard
 mouse
 pyxel
 PyAutoIt
+pillow
