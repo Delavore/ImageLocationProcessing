@@ -2,9 +2,9 @@ import mss
 import time
 import keyboard 
 import mouse
-import pyautogui
-import pydirectinput
-import ait
+#import pyautogui
+#import pydirectinput
+#import ait
 import autoit
 import math
 from bot import *                                  
@@ -21,7 +21,8 @@ lastCoord = []
 for i in range(len(path)):
    lastCoord.append(path[i])  
    
-monitor = {"top": 242, "left": 1227, "width": 640, "height": 640}  # ДЛЯ РЕЖИМА ИСПЫТАНИЯ        
+monitor = {"top": 242, "left": 1227, "width": 640, "height": 640}  # for savesoul mode 
+# monitor = {"top": 200, "left": 610, "width": 700, "height": 700} # for default mode
 output = "screen.png"
 
 def take_screen(mon: dict, out: str) -> None:
@@ -50,7 +51,7 @@ if playerCoord == - 1 and playerVec == - 1:
    print('word')
  #  continue
    
-# ОПРЕДЕЛЕНИЕ БЛИЖАЙШЕЙ ТОЧКИ        
+# determinated closest point      
 mn = 1000000
 indMn = -1
 for i in range (len(path)):

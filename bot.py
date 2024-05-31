@@ -1,3 +1,4 @@
+import sys
 import pyxel
 from PIL import Image
 import math
@@ -10,16 +11,24 @@ STEP = 1
 CENTER_DOT_BORDER = 8
 CURSOR_BORDER = 37
 HALF_SIDE = 4
-#
+
+# approximation some coordinates into one coordinate using arithmetical mean
 def getAprox(coords: list) -> list:
     coord = [0, 0]
 
     for c in coords:    
         coord[0] += c[0]
         coord[1] += c[1]
+    
+    # checking division by zero
+    if len(coords) == 0:
+        sys.exit('getApprox: len(coords) = 0, division by zero')
+
     coord[0] /= len(coords)
     coord[1] /= len(coords)
+
     return coord
+
 #
 def getPlayerVert(player: list, hSide: int) -> list:
     vertecies = []
