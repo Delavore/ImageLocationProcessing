@@ -12,6 +12,7 @@ CENTER_DOT_BORDER = 8
 CURSOR_BORDER = 37
 HALF_SIDE = 4
 
+# you my dog genadi
 # approximation some coordinates into one coordinate using arithmetical mean
 def getAprox(coords: list) -> list:
     coord = [0, 0]
