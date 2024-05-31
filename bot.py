@@ -30,6 +30,7 @@ def getAprox(coords: list) -> list:
     return coord
 
 #
+
 def getPlayerVert(player: list, hSide: int) -> list:
     vertecies = []
 
