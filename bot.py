@@ -6,13 +6,14 @@ import math
 COLOR_ROAD = (255, 255, 255, 255)
 # COLOR_ROAD = (134, 141, 134, 255)
 COLOR_PLAYER = (1, 144, 219, 255)
+RANGE_COLOR_PLAYER = ((0, 20), (100, 150), (150, 230))
+
 BORDER_OFFSET = 5
 STEP = 1
 CENTER_DOT_BORDER = 8
 CURSOR_BORDER = 37
 HALF_SIDE = 4
 
-# you my dog genadi
 # approximation some coordinates into one coordinate using arithmetical mean
 def getAprox(coords: list) -> list:
     coord = [0, 0]
@@ -30,75 +31,107 @@ def getAprox(coords: list) -> list:
 
     return coord
 
-#
-
-def getPlayerVert(player: list, hSide: int) -> list:
-    vertecies = []
-
+# количество точек, которые находятся в пределах квадрата со стороной halfSide*2 для каждой координаты 
+# quantity of points that are within square with side halfSide*2 for each coordinate
+# player - all coordinates of player
+def getDotsInSquare(player: list, halfSide: int) -> list:
+    quantity = []
+     
     for i in range(len(player)):
-        upLeft = (player[i][0] - hSide, player[i][1] + hSide) 
-        downRight = (player[i][0] + hSide, player[i][1] - hSide) 
+        # upper-left coordinate of square
+        upLeft = (player[i][0] - halfSide, player[i][1] + halfSide)
+        # down-right coordinate of square
+        downRight = (player[i][0] + halfSide, player[i][1] - halfSide) 
 
+        # counting quantity of points in a square for current vertex
         cnt = 0
         for j in range(len(player)):
-            if upLeft[0] <= player[j][0] <= downRight[0] and upLeft[1] >= player[j][1] >= downRight[1]: 
+            if (upLeft[0] <= player[j][0] <= downRight[0] and 
+                upLeft[1] >= player[j][1] >= downRight[1]): 
                 cnt += 1
 
-        vertecies.append(cnt)
-    return vertecies
-#
-def getPerson(myImg) -> list:
-    img = Image.open(myImg)
+        quantity.append(cnt)
+    return quantity
+
+# return the coordinate of the player's center and the direction vector
+def getPerson(screen: str) -> list:
+    # precomputation
+    img = Image.open(screen)
     pix = img.load()
     width, height = img.size
 
-    x = 0
-    y = 0
+    # get all dots that relation the player
     player = []
     for y in range(BORDER_OFFSET, height-BORDER_OFFSET, STEP):
         for x in range(BORDER_OFFSET, width-BORDER_OFFSET, STEP):
             color = pix[x, y]
-            if (0 <= color[0] <= 20) and (100 <= color[1] <= 150) and (150 <= color[2] <= 230): 
+
+            if ((RANGE_COLOR_PLAYER[0][0] <= color[0] <= RANGE_COLOR_PLAYER[0][1]) and
+                (RANGE_COLOR_PLAYER[1][0] <= color[1] <= RANGE_COLOR_PLAYER[1][1]) and 
+                (RANGE_COLOR_PLAYER[2][0] <= color[2] <= RANGE_COLOR_PLAYER[2][1])):
                 player.append((x, y))
+
+    # abort
     if len(player) == 0:
         return [-1, -1]
 
-    vertecies = getPlayerVert(player, HALF_SIDE)
-    tmp1 = []
-    tmp2 = []
+    quantities = getDotsInSquare(player, HALF_SIDE)
+
+    centerDotCoord = []
+    cursorCoord = []
     
+    # find coordinates of cursor and center of Player
     for i in range(len(player)):        
-        if vertecies[i] <= CENTER_DOT_BORDER:
-            tmp1.append(player[i])
-        elif vertecies[i] >= CURSOR_BORDER:
-            tmp2.append(player[i])
-    if len(tmp1) == 0 or len(tmp2) == 0:
+        if quantities[i] <= CENTER_DOT_BORDER:
+            centerDotCoord.append(player[i])
+        elif quantities[i] >= CURSOR_BORDER:
+            cursorCoord.append(player[i])
+
+    # abort
+    if len(centerDotCoord) == 0 or len(cursorCoord) == 0:
         return [-1, -1]
         
-    centerDotCoord = getAprox(tmp1)
-    cursorCoord = getAprox(tmp2)
-    vec = [cursorCoord[0] - centerDotCoord[0], cursorCoord[1] - centerDotCoord[1]]
-    h = ((cursorCoord[0] - centerDotCoord[0])**2 + (cursorCoord[1] - centerDotCoord[1])**2)**0.5
-    vec[0] /= h
-    vec[1] /= h
-    return [centerDotCoord, vec]
+    # approximate coordinates
+    centerDotCoord = getAprox(centerDotCoord)
+    cursorCoord = getAprox(cursorCoord)
 
-def getAngle(playerCoord: list, playerVec: list, targetCoord: list) -> float:
-    newVec = (targetCoord[0] - playerCoord[0], targetCoord[1] - playerCoord[1])
-    cosa = ((playerVec[0] * newVec[0] + playerVec[1] * newVec[1]) / 
-    ((((newVec[0])**2 + (newVec[1])**2)**0.5) * (((playerVec[0])**2 + (playerVec[1])**2)**0.5)))
+    # dirVec - directionVector
+    dirVec = [cursorCoord[0] - centerDotCoord[0], cursorCoord[1] - centerDotCoord[1]]
+    vecLen = ((cursorCoord[0] - centerDotCoord[0])**2 + 
+         (cursorCoord[1] - centerDotCoord[1])**2)**0.5
     
-    print("cosa", cosa)
+    # normalize vector
+    dirVec[0] /= vecLen
+    dirVec[1] /= vecLen
+
+    return [centerDotCoord, dirVec]
+
+# get angel between direction vector of player and target coordinate
+def getAngle(playerCoord: list, dirVec: list, targetCoord: list) -> float:
+    helpVec = (targetCoord[0] - playerCoord[0], targetCoord[1] - playerCoord[1])
+
+    # calculate the cosine of the angle between dirVec and helpVec using scolar multiplication
+    cosAlpha = ((dirVec[0] * helpVec[0] + dirVec[1] * helpVec[1]) / 
+    ((((helpVec[0])**2 + (helpVec[1])**2)**0.5) * (((dirVec[0])**2 + (dirVec[1])**2)**0.5)))
     
-    alpha = math.acos(cosa)
+    print("cosa", cosAlpha)
+    
+    alpha = math.acos(cosAlpha)
     alpha = alpha * 180 / math.pi
-    tmp = playerVec[0] * newVec[1] - newVec[0] * playerVec[1]
-    
+ 
+    # calculate the sign of the angle using the vector product
+    tmp = dirVec[0] * helpVec[1] - helpVec[0] * dirVec[1]
+
+    '''
     if tmp >= 0:
         sign = 1
     else:
         sign = -1
+
     return alpha * sign
+    '''
+    return alpha if tmp >= 0 else -alpha
+
 #
 def getRoad(imgPng) -> list:
     img = Image.open(imgPng)
@@ -117,7 +150,7 @@ def getRoad(imgPng) -> list:
                 road.append((x, y))
     return road
 
-def aproxRoad(road: list, hSide: int):
+def aproxRoad(road: list, halfSide: int):
     tmp1 = []
     tmp2 = []
 
@@ -125,15 +158,16 @@ def aproxRoad(road: list, hSide: int):
     while i < len(road):
         if i >= len(road):
             break
-        upLeft = (road[i][0] - hSide, road[i][1] + hSide) 
-        downRight = (road[i][0] + hSide, road[i][1] - hSide) 
+        upLeft = (road[i][0] - halfSide, road[i][1] + halfSide) 
+        downRight = (road[i][0] + halfSide, road[i][1] - halfSide) 
         tmp1 = []
 
         j = 0
         while j < len(road):
             if j >= len(road):
                 break
-            if upLeft[0] <= road[j][0] <= downRight[0] and upLeft[1] >= road[j][1] >= downRight[1]: 
+            if (upLeft[0] <= road[j][0] <= downRight[0] and 
+                upLeft[1] >= road[j][1] >= downRight[1]): 
                 tmp1.append(road[j])
                 road.pop(j)
                 j -= 1
@@ -147,15 +181,23 @@ def aproxRoad(road: list, hSide: int):
         tmp3[i][1] = int(tmp3[i][1])
     return tmp3
 
-############      
-#   .--.   #
-#   _˘˘ _  #sexAprox   
-#  /(.)(.)\/‾‾  
-#  \_) .(  #
-#   (  Y ) #
-############
+#         ,--. 
+#        ((\\)
+#        \-_/  
+#      .--.v.-.
+#     /( .)( .)\  sexAprox 
+#     \ \    /  \/‾‾
+#      \_) .(    
+#       /    \
+#      :   Y  :
+#######`.   \ :#########  
+#########`.  \:######### 
+#          `) )  
+#          / /:  
+#         / / :
+#        (_\/_\
 
-def aproxSex(road1: list, hSide: int):
+def aproxSex(road1: list, halfSide: int):
     tmp = []
     road = []
     for i in range(len(road1)):
@@ -168,13 +210,13 @@ def aproxSex(road1: list, hSide: int):
     while True:   
         flag = True
 
-        upLeft = (target[0] - hSide, target[1] + hSide) 
-        downRight = (target[0] + hSide, target[1] - hSide) 
+        upLeft = (target[0] - halfSide, target[1] + halfSide) 
+        downRight = (target[0] + halfSide, target[1] - halfSide) 
 
         j = 0
         while j < len(road):
             if (upLeft[0] <= road[j][0] <= downRight[0] and 
-            upLeft[1] >= road[j][1] >= downRight[1]): 
+                upLeft[1] >= road[j][1] >= downRight[1]): 
                 tmp.append(road[j])
                 target = road[j]
                 road.pop(j)
@@ -182,6 +224,7 @@ def aproxSex(road1: list, hSide: int):
                 flag = False
                 break
             j += 1
+
         if flag:
             break  
 
@@ -194,12 +237,13 @@ def aproxSex(road1: list, hSide: int):
     while True:
         flag = True
 
-        upLeft = (target[0] - hSide, target[1] + hSide) 
-        downRight = (target[0] + hSide, target[1] - hSide) 
+        upLeft = (target[0] - halfSide, target[1] + halfSide) 
+        downRight = (target[0] + halfSide, target[1] - halfSide) 
 
         j = 0
         while j < len(road):
-            if upLeft[0] <= road[j][0] <= downRight[0] and upLeft[1] >= road[j][1] >= downRight[1]: 
+            if (upLeft[0] <= road[j][0] <= downRight[0] and 
+                upLeft[1] >= road[j][1] >= downRight[1]): 
                 tmp2.append(road[j])
                 target = road[j]
                 road.pop(j)
